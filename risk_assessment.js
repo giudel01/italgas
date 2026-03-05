@@ -99,9 +99,12 @@
         _raSnapshot = raRec;
         _m2mRecords = m2mRec;
 
+        /* Rendi visibile il form PRIMA di popolare,
+           così getElementById trova gli elementi nel DOM attivo */
+        showLoading(false);
+
         populateRischioFields(raRec);
         renderControls(m2mRec);
-        showLoading(false);
       })
       .catch(function (err) {
         showFatalError('Impossibile caricare i dati: ' + err.message);
@@ -128,13 +131,18 @@
   }
 
   function updateRischioDisplay() {
-    var prob   = document.getElementById('probabilita_inerente').value;
-    var impact = document.getElementById('impatto_inerente').value;
+    var probEl   = document.getElementById('probabilita_inerente');
+    var impactEl = document.getElementById('impatto_inerente');
+    var display  = document.getElementById('rischio_inerente_display');
+    var hidden   = document.getElementById('rischio_inerente');
+
+    /* Se uno degli elementi non è ancora nel DOM, non fare nulla */
+    if (!probEl || !impactEl || !display || !hidden) return;
+
+    var prob   = probEl.value;
+    var impact = impactEl.value;
     var risk   = (RISK_MATRIX[prob] && RISK_MATRIX[prob][impact]) ? RISK_MATRIX[prob][impact] : null;
     var labels = { alto: 'ALTO', medio: 'MEDIO', basso: 'BASSO' };
-
-    var display = document.getElementById('rischio_inerente_display');
-    var hidden  = document.getElementById('rischio_inerente');
 
     display.innerHTML = '';
     display.className = 'ra-computed-field';
