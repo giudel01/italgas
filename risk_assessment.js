@@ -56,6 +56,9 @@
       xhr.setRequestHeader('Accept', 'application/json');
       if (window.g_ck) xhr.setRequestHeader('X-UserToken', window.g_ck);
 
+      xhr.timeout = 30000;
+      xhr.ontimeout = function () { reject(new Error('Timeout richiesta (30s)')); };
+
       xhr.onload = function () {
         if (xhr.status >= 200 && xhr.status < 300) {
           try { resolve(JSON.parse(xhr.responseText)); } catch (_) { resolve({}); }
@@ -89,26 +92,28 @@
       + '&sysparm_fields=sys_id,' + M2M_CTRL_FIELD + ',' + M2M_RESULT_FIELD
       + '&sysparm_limit=50';
 
-    Promise.all([callApi('GET', raUrl), callApi('GET', m2mUrl)])
-      .then(function (results) {
-        var raRec  = results[0].result;
-        var m2mRec = results[1].result || [];
+    try {
+      Promise.all([callApi('GET', raUrl), callApi('GET', m2mUrl)])
+        .then(function (results) {
+          var raRec  = results[0].result;
+          var m2mRec = results[1].result || [];
 
-        if (!raRec) throw new Error('Record risk assessment non trovato');
+          if (!raRec) throw new Error('Record risk assessment non trovato');
 
-        _raSnapshot = raRec;
-        _m2mRecords = m2mRec;
+          _raSnapshot = raRec;
+          _m2mRecords = m2mRec;
 
-        /* Rendi visibile il form PRIMA di popolare,
-           così getElementById trova gli elementi nel DOM attivo */
-        showLoading(false);
+          showLoading(false);
 
-        populateRischioFields(raRec);
-        renderControls(m2mRec);
-      })
-      .catch(function (err) {
-        showFatalError('Impossibile caricare i dati: ' + err.message);
-      });
+          populateRischioFields(raRec);
+          renderControls(m2mRec);
+        })
+        .catch(function (err) {
+          showFatalError('Impossibile caricare i dati: ' + err.message);
+        });
+    } catch (e) {
+      showFatalError('Errore critico durante il caricamento: ' + e.message);
+    }
   }
 
   /* ----------------------------------------------------------
