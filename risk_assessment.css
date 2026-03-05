@@ -370,8 +370,32 @@ body {
   gap: 0;
 }
 
-/* Solo le righe visibili partecipano al separatore */
-.ra-control-row:not(.ra-hidden) ~ .ra-control-row:not(.ra-hidden) {
+/* Spinner inline nel grid mentre carica i controlli */
+.ra-controls-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 0;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.ra-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #293e6b;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Separatore tra righe generate dinamicamente */
+.ra-control-row + .ra-control-row {
   border-top: 1px solid #f3f4f6;
 }
 
