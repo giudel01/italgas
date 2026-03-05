@@ -375,7 +375,7 @@
   /* ----------------------------------------------------------
      INIT
   ---------------------------------------------------------- */
-  document.addEventListener('DOMContentLoaded', function () {
+  function init() {
     _sysId = getSysId();
 
     if (!_sysId) {
@@ -387,6 +387,15 @@
     document.getElementById('probabilita_inerente').addEventListener('change', updateRischioDisplay);
 
     loadAll();
-  });
+  }
+
+  /* Se il DOM è già pronto (script caricato dopo DOMContentLoaded), chiama init subito;
+     altrimenti aspetta l'evento. Questo previene il caso classico in cui il <script src>
+     in fondo alla pagina viene eseguito dopo che DOMContentLoaded è già scattato. */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
 })();
