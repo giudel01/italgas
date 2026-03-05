@@ -3,8 +3,20 @@
 
 <link rel="stylesheet" href="risk_assessment.cssdbx" />
 
-<div class="ra-wrapper">
+<!-- sys_id del record da aggiornare, passato come parametro URL -->
+<input type="hidden" id="ra_sys_id" value="${sysparm_sys_id}" />
 
+<!-- LOADING OVERLAY -->
+<div id="ra-loading" class="ra-loading-overlay">
+  <div class="ra-loading-box">
+    <div class="ra-spinner-lg"></div>
+    <p>Caricamento record in corso…</p>
+  </div>
+</div>
+
+<div class="ra-wrapper" id="ra-main" style="display:none">
+
+  <!-- HEADER -->
   <div class="ra-header">
     <div class="ra-header-icon">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -15,7 +27,7 @@
     </div>
     <div>
       <h1 class="ra-title">Risk Assessment</h1>
-      <p class="ra-subtitle">Compilazione valutazione del rischio personalizzata</p>
+      <p class="ra-subtitle" id="ra-record-label">Aggiornamento valutazione del rischio</p>
     </div>
   </div>
 
@@ -36,13 +48,11 @@
     </div>
 
     <div class="ra-grid-3">
+      <!-- Impatto -->
       <div class="ra-field-group">
-        <label class="ra-label" for="impatto_inerente">
-          Impatto Inerente 231
-          <span class="ra-required">*</span>
-        </label>
+        <label class="ra-label" for="impatto_inerente">Impatto Inerente 231</label>
         <div class="ra-select-wrapper">
-          <select id="impatto_inerente" name="impatto_inerente" class="ra-select">
+          <select id="impatto_inerente" class="ra-select">
             <option value="">— Seleziona —</option>
             <option value="alto">Alto</option>
             <option value="medio">Medio</option>
@@ -53,17 +63,14 @@
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </div>
-          <div class="ra-badge-wrapper" id="badge_impatto"></div>
         </div>
       </div>
 
+      <!-- Probabilità -->
       <div class="ra-field-group">
-        <label class="ra-label" for="probabilita_inerente">
-          Probabilità Inerente 231
-          <span class="ra-required">*</span>
-        </label>
+        <label class="ra-label" for="probabilita_inerente">Probabilità Inerente 231</label>
         <div class="ra-select-wrapper">
-          <select id="probabilita_inerente" name="probabilita_inerente" class="ra-select">
+          <select id="probabilita_inerente" class="ra-select">
             <option value="">— Seleziona —</option>
             <option value="alto">Alto</option>
             <option value="medio">Medio</option>
@@ -74,22 +81,22 @@
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </div>
-          <div class="ra-badge-wrapper" id="badge_probabilita"></div>
         </div>
       </div>
 
+      <!-- Rischio Inerente (calcolato) -->
       <div class="ra-field-group">
         <label class="ra-label">Rischio Inerente</label>
         <div class="ra-computed-field" id="rischio_inerente_display">
           <span class="ra-computed-placeholder">Calcolato automaticamente</span>
         </div>
-        <input type="hidden" id="rischio_inerente" name="rischio_inerente" />
+        <input type="hidden" id="rischio_inerente" />
       </div>
     </div>
   </div>
 
-  <!-- SEZIONE: CONTROLLI -->
-  <div class="ra-card">
+  <!-- SEZIONE: CONTROLLI (righe mostrate dinamicamente) -->
+  <div class="ra-card" id="ra-controls-card">
     <div class="ra-card-header">
       <div class="ra-card-icon controlli-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -99,126 +106,172 @@
       </div>
       <div>
         <h2 class="ra-card-title">Controlli e Valutazioni</h2>
-        <p class="ra-card-desc">Associa i controlli e indica la loro efficacia</p>
+        <p class="ra-card-desc">Valuta l'efficacia dei controlli associati al rischio</p>
       </div>
     </div>
 
-    <div class="ra-controls-grid">
+    <div class="ra-controls-grid" id="ra-controls-grid">
 
-      <!-- C1 -->
-      <div class="ra-control-row">
-        <div class="ra-control-num">C1</div>
+      <!-- C1 — nascosto di default, mostrato da JS se popolato -->
+      <div class="ra-control-row ra-hidden" id="row_c1">
+        <div class="ra-control-badge">
+          <span class="ra-control-num">C1</span>
+        </div>
         <div class="ra-control-fields">
-          <div class="ra-field-group ra-field-ref">
-            <label class="ra-label" for="c1">Controllo 1</label>
-            <div class="ra-ref-wrapper">
-              <input type="text" id="c1_display" class="ra-input ra-ref-input" placeholder="Cerca controllo..." readonly />
-              <input type="hidden" id="c1" name="c1" />
-              <button type="button" class="ra-ref-btn" onclick="openRefSearch('c1', 'c1_display')">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"/>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-              </button>
-              <button type="button" class="ra-ref-clear" onclick="clearRef('c1', 'c1_display')" title="Rimuovi">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
+          <div class="ra-field-group">
+            <label class="ra-label">Controllo</label>
+            <div class="ra-control-chip" id="c1_chip">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span id="c1_name">—</span>
             </div>
+            <input type="hidden" id="c1" />
           </div>
-          <div class="ra-field-group ra-field-val">
-            <label class="ra-label" for="valutazione_c1">Valutazione C1</label>
-            <input type="text" id="valutazione_c1" name="valutazione_c1" class="ra-input" placeholder="Inserisci valutazione..." />
+          <div class="ra-field-group">
+            <label class="ra-label" for="valutazione_c1">
+              Valutazione
+              <span class="ra-required">*</span>
+            </label>
+            <div class="ra-select-wrapper">
+              <select id="valutazione_c1" class="ra-select">
+                <option value="">— Seleziona —</option>
+                <option value="1">1 — Bassa efficacia</option>
+                <option value="2">2 — Media efficacia</option>
+                <option value="3">3 — Alta efficacia</option>
+              </select>
+              <div class="ra-select-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- C2 -->
-      <div class="ra-control-row">
-        <div class="ra-control-num">C2</div>
+      <div class="ra-control-row ra-hidden" id="row_c2">
+        <div class="ra-control-badge">
+          <span class="ra-control-num">C2</span>
+        </div>
         <div class="ra-control-fields">
-          <div class="ra-field-group ra-field-ref">
-            <label class="ra-label" for="c2">Controllo 2</label>
-            <div class="ra-ref-wrapper">
-              <input type="text" id="c2_display" class="ra-input ra-ref-input" placeholder="Cerca controllo..." readonly />
-              <input type="hidden" id="c2" name="c2" />
-              <button type="button" class="ra-ref-btn" onclick="openRefSearch('c2', 'c2_display')">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"/>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-              </button>
-              <button type="button" class="ra-ref-clear" onclick="clearRef('c2', 'c2_display')" title="Rimuovi">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
+          <div class="ra-field-group">
+            <label class="ra-label">Controllo</label>
+            <div class="ra-control-chip" id="c2_chip">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span id="c2_name">—</span>
             </div>
+            <input type="hidden" id="c2" />
           </div>
-          <div class="ra-field-group ra-field-val">
-            <label class="ra-label" for="valutazione_c2">Valutazione C2</label>
-            <input type="text" id="valutazione_c2" name="valutazione_c2" class="ra-input" placeholder="Inserisci valutazione..." />
+          <div class="ra-field-group">
+            <label class="ra-label" for="valutazione_c2">
+              Valutazione
+              <span class="ra-required">*</span>
+            </label>
+            <div class="ra-select-wrapper">
+              <select id="valutazione_c2" class="ra-select">
+                <option value="">— Seleziona —</option>
+                <option value="1">1 — Bassa efficacia</option>
+                <option value="2">2 — Media efficacia</option>
+                <option value="3">3 — Alta efficacia</option>
+              </select>
+              <div class="ra-select-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- C3 -->
-      <div class="ra-control-row">
-        <div class="ra-control-num">C3</div>
+      <div class="ra-control-row ra-hidden" id="row_c3">
+        <div class="ra-control-badge">
+          <span class="ra-control-num">C3</span>
+        </div>
         <div class="ra-control-fields">
-          <div class="ra-field-group ra-field-ref">
-            <label class="ra-label" for="c3">Controllo 3</label>
-            <div class="ra-ref-wrapper">
-              <input type="text" id="c3_display" class="ra-input ra-ref-input" placeholder="Cerca controllo..." readonly />
-              <input type="hidden" id="c3" name="c3" />
-              <button type="button" class="ra-ref-btn" onclick="openRefSearch('c3', 'c3_display')">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"/>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-              </button>
-              <button type="button" class="ra-ref-clear" onclick="clearRef('c3', 'c3_display')" title="Rimuovi">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
+          <div class="ra-field-group">
+            <label class="ra-label">Controllo</label>
+            <div class="ra-control-chip" id="c3_chip">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span id="c3_name">—</span>
             </div>
+            <input type="hidden" id="c3" />
           </div>
-          <div class="ra-field-group ra-field-val">
-            <label class="ra-label" for="valutazione_c3">Valutazione C3</label>
-            <input type="text" id="valutazione_c3" name="valutazione_c3" class="ra-input" placeholder="Inserisci valutazione..." />
+          <div class="ra-field-group">
+            <label class="ra-label" for="valutazione_c3">
+              Valutazione
+              <span class="ra-required">*</span>
+            </label>
+            <div class="ra-select-wrapper">
+              <select id="valutazione_c3" class="ra-select">
+                <option value="">— Seleziona —</option>
+                <option value="1">1 — Bassa efficacia</option>
+                <option value="2">2 — Media efficacia</option>
+                <option value="3">3 — Alta efficacia</option>
+              </select>
+              <div class="ra-select-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- C4 -->
-      <div class="ra-control-row">
-        <div class="ra-control-num">C4</div>
+      <div class="ra-control-row ra-hidden" id="row_c4">
+        <div class="ra-control-badge">
+          <span class="ra-control-num">C4</span>
+        </div>
         <div class="ra-control-fields">
-          <div class="ra-field-group ra-field-ref">
-            <label class="ra-label" for="c4">Controllo 4</label>
-            <div class="ra-ref-wrapper">
-              <input type="text" id="c4_display" class="ra-input ra-ref-input" placeholder="Cerca controllo..." readonly />
-              <input type="hidden" id="c4" name="c4" />
-              <button type="button" class="ra-ref-btn" onclick="openRefSearch('c4', 'c4_display')">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"/>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <div class="ra-field-group">
+            <label class="ra-label">Controllo</label>
+            <div class="ra-control-chip" id="c4_chip">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span id="c4_name">—</span>
+            </div>
+            <input type="hidden" id="c4" />
+          </div>
+          <div class="ra-field-group">
+            <label class="ra-label" for="valutazione_c4">
+              Valutazione
+              <span class="ra-required">*</span>
+            </label>
+            <div class="ra-select-wrapper">
+              <select id="valutazione_c4" class="ra-select">
+                <option value="">— Seleziona —</option>
+                <option value="1">1 — Bassa efficacia</option>
+                <option value="2">2 — Media efficacia</option>
+                <option value="3">3 — Alta efficacia</option>
+              </select>
+              <div class="ra-select-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="6 9 12 15 18 9"/>
                 </svg>
-              </button>
-              <button type="button" class="ra-ref-clear" onclick="clearRef('c4', 'c4_display')" title="Rimuovi">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
+              </div>
             </div>
           </div>
-          <div class="ra-field-group ra-field-val">
-            <label class="ra-label" for="valutazione_c4">Valutazione C4</label>
-            <input type="text" id="valutazione_c4" name="valutazione_c4" class="ra-input" placeholder="Inserisci valutazione..." />
-          </div>
         </div>
+      </div>
+
+      <!-- Placeholder quando nessun controllo è associato -->
+      <div class="ra-no-controls ra-hidden" id="ra-no-controls">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p>Nessun controllo associato a questo record.</p>
       </div>
 
     </div>
@@ -226,45 +279,21 @@
 
   <!-- AZIONI -->
   <div class="ra-actions">
-    <button type="button" class="ra-btn ra-btn-secondary" onclick="resetForm()">
+    <button type="button" class="ra-btn ra-btn-secondary" onclick="reloadRecord()">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="1 4 1 10 7 10"/>
         <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
       </svg>
-      Reimposta
+      Annulla modifiche
     </button>
     <button type="button" class="ra-btn ra-btn-primary" onclick="submitForm()">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
-      Salva Record
+      Salva modifiche
     </button>
   </div>
 
-</div>
-
-<!-- MODALE RICERCA RIFERIMENTO -->
-<div id="ra-modal-overlay" class="ra-modal-overlay" onclick="closeModal()">
-  <div class="ra-modal" onclick="event.stopPropagation()">
-    <div class="ra-modal-header">
-      <h3 class="ra-modal-title">Cerca Controllo</h3>
-      <button class="ra-modal-close" onclick="closeModal()">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </div>
-    <div class="ra-modal-search">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input type="text" id="modal-search-input" class="ra-modal-input" placeholder="Digita per cercare..." oninput="searchRecords(this.value)" />
-    </div>
-    <div id="modal-results" class="ra-modal-results">
-      <div class="ra-modal-empty">Inizia a digitare per cercare...</div>
-    </div>
-  </div>
 </div>
 
 <!-- TOAST NOTIFICHE -->
